@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   useColorScheme,
   Linking,
@@ -13,158 +12,154 @@ import { Ionicons } from '@expo/vector-icons';
 export interface Source {
   title: string;
   url: string;
-  domain?: string;
+  domain: string;
 }
 
 interface SourceListProps {
   sources: Source[];
 }
 
-function getDomain(url: string): string {
-  try {
-    return new URL(url).hostname.replace('www.', '');
-  } catch {
-    return url;
-  }
-}
-
-function getFaviconUrl(url: string): string {
-  try {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-  } catch {
-    return '';
-  }
-}
-
 export function SourceList({ sources }: SourceListProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  if (sources.length === 0) return null;
-
-  return (
-    <View style={styles.container}>
-      {sources.map((source, index) => {
-        const domain = source.domain || getDomain(source.url);
-        const favicon = getFaviconUrl(source.url);
-
-        return (
-          <SourceItem
-            key={index}
-            source={source}
-            domain={domain}
-            favicon={favicon}
-            isDark={isDark}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
-interface SourceItemProps {
-  source: Source;
-  domain: string;
-  favicon: string;
-  isDark: boolean;
-}
-
-function SourceItem({ source, domain, favicon, isDark }: SourceItemProps) {
-  const handlePress = () => {
-    Linking.openURL(source.url);
+  const handlePress = (url: string) => {
+    Linking.openURL(url).catch((err) =>
+      console.error('Failed to open URL:', err)
+    );
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      style={[
-        styles.item,
-        isDark ? styles.itemDark : styles.itemLight,
-      ]}
-      activeOpacity={0.7}
-    >
-      {favicon ? (
-        <Image
-          source={{ uri: favicon }}
-          style={styles.favicon}
-          defaultSource={require('./placeholder.png')} // You'll need to add a placeholder
-        />
-      ) : null}
-
-      <View style={styles.textContainer}>
-        <Text
-          style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
-          numberOfLines={1}
+    <View style={styles.container}>
+      {sources.map((source, index) => (
+        <TouchableOpacity
+          key={`${source.url}-${index}`}
+          style={[
+            styles.sourceItem,
+            isDark ? styles.sourceItemDark : styles.sourceItemLight,
+          ]}
+          onPress={() => handlePress(source.url)}
+          activeOpacity={0.7}
         >
-          {source.title || source.url}
-        </Text>
-        <Text
-          style={[styles.domain, isDark ? styles.domainDark : styles.domainLight]}
-          numberOfLines={1}
-        >
-          {domain}
-        </Text>
-      </View>
+          {/* Favicon placeholder - colored circle with first letter */}
+          <View
+            style={[
+              styles.favicon,
+              isDark ? styles.faviconDark : styles.faviconLight,
+            ]}
+          >
+            <Text
+              style={[
+                styles.faviconText,
+                isDark ? styles.faviconTextDark : styles.faviconTextLight,
+              ]}
+            >
+              {source.domain.charAt(0).toUpperCase()}
+            </Text>
+          </View>
 
-      <Ionicons
-        name="open-outline"
-        size={14}
-        color={isDark ? '#A3A3A3' : '#737373'}
-        style={styles.icon}
-      />
-    </TouchableOpacity>
+          {/* Source info */}
+          <View style={styles.sourceInfo}>
+            <Text
+              style={[
+                styles.sourceTitle,
+                isDark ? styles.sourceTitleDark : styles.sourceTitleLight,
+              ]}
+              numberOfLines={1}
+            >
+              {source.title}
+            </Text>
+            <Text
+              style={[
+                styles.sourceDomain,
+                isDark ? styles.sourceDomainDark : styles.sourceDomainLight,
+              ]}
+              numberOfLines={1}
+            >
+              {source.domain}
+            </Text>
+          </View>
+
+          {/* External link icon */}
+          <Ionicons
+            name="open-outline"
+            size={16}
+            color={isDark ? '#A3A3A3' : '#737373'}
+            style={styles.externalIcon}
+          />
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 4,
+    gap: 8,
   },
-  item: {
+  sourceItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: -12,
+    padding: 12,
     borderRadius: 8,
+    borderWidth: 1,
   },
-  itemLight: {
-    backgroundColor: 'transparent',
+  sourceItemLight: {
+    backgroundColor: '#FAFAFA', // neutral-50
+    borderColor: '#E5E5E5', // neutral-200
   },
-  itemDark: {
-    backgroundColor: 'transparent',
+  sourceItemDark: {
+    backgroundColor: 'rgba(38, 38, 38, 0.5)', // neutral-800/50
+    borderColor: '#404040', // neutral-700
   },
   favicon: {
-    width: 16,
-    height: 16,
-    borderRadius: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  textContainer: {
-    flex: 1,
-    minWidth: 0,
+  faviconLight: {
+    backgroundColor: '#E5E5E5', // neutral-200
   },
-  title: {
+  faviconDark: {
+    backgroundColor: '#404040', // neutral-700
+  },
+  faviconText: {
     fontSize: 14,
+    fontWeight: '600',
   },
-  titleLight: {
-    color: '#404040', // neutral-700
+  faviconTextLight: {
+    color: '#525252', // neutral-600
   },
-  titleDark: {
+  faviconTextDark: {
     color: '#D4D4D4', // neutral-300
   },
-  domain: {
+  sourceInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  sourceTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  sourceTitleLight: {
+    color: '#171717', // neutral-900
+  },
+  sourceTitleDark: {
+    color: '#FFFFFF',
+  },
+  sourceDomain: {
     fontSize: 12,
-    marginTop: 2,
   },
-  domainLight: {
-    color: '#A3A3A3', // neutral-400
-  },
-  domainDark: {
+  sourceDomainLight: {
     color: '#737373', // neutral-500
   },
-  icon: {
-    opacity: 0.7,
+  sourceDomainDark: {
+    color: '#A3A3A3', // neutral-400
+  },
+  externalIcon: {
+    opacity: 0.5,
   },
 });

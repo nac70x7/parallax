@@ -1,28 +1,27 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   useColorScheme,
   Animated,
-  Linking,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { ConfidenceBadge } from './confidence-badge';
 
-interface EnginePosition {
+interface Citation {
+  title: string;
+  url: string;
+  domain: string;
+}
+
+interface Position {
   engine: string;
   position: string;
-  citation?: {
-    title: string;
-    url: string;
-  };
+  citation: Citation;
 }
 
 interface ConflictCardProps {
   topic: string;
-  positions: EnginePosition[];
+  positions: Position[];
   resolutionHint?: string;
 }
 
@@ -36,27 +35,30 @@ export function ConflictCard({
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Pulsing border animation
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1500,
+          duration: 2000,
           useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0,
-          duration: 1500,
+          duration: 2000,
           useNativeDriver: false,
         }),
       ])
     );
     animation.start();
     return () => animation.stop();
-  }, [pulseAnim]);
+  }, []);
 
   const borderColor = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: isDark ? ['#404040', '#737373'] : ['#D4D4D4', '#A3A3A3'],
+    outputRange: isDark
+      ? ['#737373', '#A3A3A3'] // neutral-500 to neutral-400
+      : ['#D4D4D4', '#A3A3A3'], // neutral-300 to neutral-400
   });
 
   return (
@@ -67,30 +69,72 @@ export function ConflictCard({
         { borderColor },
       ]}
     >
-      {/* Header */}
+      {/* Conflict badge */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons
-            name="alert-circle-outline"
-            size={20}
-            color={isDark ? '#A3A3A3' : '#737373'}
-          />
+        <View
+          style={[
+            styles.badge,
+            isDark ? styles.badgeDark : styles.badgeLight,
+          ]}
+        >
           <Text
             style={[
-              styles.topic,
-              isDark ? styles.topicDark : styles.topicLight,
+              styles.badgeText,
+              isDark ? styles.badgeTextDark : styles.badgeTextLight,
             ]}
           >
-            {topic}
+            ⚠️ CONFLICTING INFORMATION
           </Text>
         </View>
-        <ConfidenceBadge level="CONFLICTED" style={styles.badge} />
       </View>
 
-      {/* Positions grid */}
-      <View style={styles.positionsContainer}>
+      {/* Topic */}
+      <Text
+        style={[
+          styles.topic,
+          isDark ? styles.topicDark : styles.topicLight,
+        ]}
+      >
+        {topic}
+      </Text>
+
+      {/* Positions */}
+      <View style={styles.positions}>
         {positions.map((pos, index) => (
-          <PositionItem key={index} position={pos} isDark={isDark} />
+          <View key={`${pos.engine}-${index}`} style={styles.positionItem}>
+            <View style={styles.positionHeader}>
+              <View
+                style={[
+                  styles.engineDot,
+                  isDark ? styles.engineDotDark : styles.engineDotLight,
+                ]}
+              />
+              <Text
+                style={[
+                  styles.engineName,
+                  isDark ? styles.engineNameDark : styles.engineNameLight,
+                ]}
+              >
+                {pos.engine}
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.position,
+                isDark ? styles.positionDark : styles.positionLight,
+              ]}
+            >
+              {pos.position}
+            </Text>
+            <Text
+              style={[
+                styles.citation,
+                isDark ? styles.citationDark : styles.citationLight,
+              ]}
+            >
+              Source: {pos.citation.domain}
+            </Text>
+          </View>
         ))}
       </View>
 
@@ -98,17 +142,17 @@ export function ConflictCard({
       {resolutionHint && (
         <View
           style={[
-            styles.hintContainer,
-            isDark && styles.hintContainerDark,
+            styles.resolutionHint,
+            isDark ? styles.resolutionHintDark : styles.resolutionHintLight,
           ]}
         >
           <Text
             style={[
-              styles.hint,
-              isDark ? styles.hintDark : styles.hintLight,
+              styles.resolutionText,
+              isDark ? styles.resolutionTextDark : styles.resolutionTextLight,
             ]}
           >
-            {resolutionHint}
+            💡 {resolutionHint}
           </Text>
         </View>
       )}
@@ -116,91 +160,53 @@ export function ConflictCard({
   );
 }
 
-interface PositionItemProps {
-  position: EnginePosition;
-  isDark: boolean;
-}
-
-function PositionItem({ position, isDark }: PositionItemProps) {
-  const handlePress = () => {
-    if (position.citation?.url) {
-      Linking.openURL(position.citation.url);
-    }
-  };
-
-  return (
-    <View
-      style={[
-        styles.position,
-        isDark ? styles.positionDark : styles.positionLight,
-      ]}
-    >
-      <Text
-        style={[
-          styles.engineLabel,
-          isDark ? styles.engineLabelDark : styles.engineLabelLight,
-        ]}
-      >
-        {position.engine}
-      </Text>
-      <Text
-        style={[
-          styles.positionText,
-          isDark ? styles.positionTextDark : styles.positionTextLight,
-        ]}
-      >
-        {position.position}
-      </Text>
-      {position.citation && (
-        <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-          <Text
-            style={[
-              styles.citation,
-              isDark ? styles.citationDark : styles.citationLight,
-            ]}
-          >
-            {position.citation.title}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
     padding: 24,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 2,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
   },
   cardDark: {
     backgroundColor: 'rgba(23, 23, 23, 0.8)', // neutral-900/80
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  headerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  badgeLight: {
+    backgroundColor: '#FAFAFA', // neutral-50
+    borderWidth: 1,
+    borderColor: '#E5E5E5', // neutral-200
+  },
+  badgeDark: {
+    backgroundColor: '#262626', // neutral-800
+    borderWidth: 1,
+    borderColor: '#404040', // neutral-700
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  badgeTextLight: {
+    color: '#737373', // neutral-500
+  },
+  badgeTextDark: {
+    color: '#A3A3A3', // neutral-400
   },
   topic: {
-    flex: 1,
     fontSize: 18,
-    fontWeight: '500',
+    fontWeight: '600',
     lineHeight: 26,
+    marginBottom: 20,
   },
   topicLight: {
     color: '#171717', // neutral-900
@@ -208,77 +214,79 @@ const styles = StyleSheet.create({
   topicDark: {
     color: '#FFFFFF',
   },
-  badge: {
-    flexShrink: 0,
-  },
-  positionsContainer: {
+  positions: {
     gap: 16,
   },
-  position: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
+  positionItem: {
+    gap: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(229, 229, 229, 0.5)', // neutral-200/50
   },
-  positionLight: {
-    backgroundColor: '#FAFAFA', // neutral-50
-    borderColor: '#F5F5F5', // neutral-100
+  positionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  positionDark: {
-    backgroundColor: 'rgba(38, 38, 38, 0.5)', // neutral-800/50
-    borderColor: '#262626', // neutral-800
+  engineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
-  engineLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 8,
+  engineDotLight: {
+    backgroundColor: '#A3A3A3', // neutral-400
   },
-  engineLabelLight: {
-    color: '#737373', // neutral-500
+  engineDotDark: {
+    backgroundColor: '#737373', // neutral-500
   },
-  engineLabelDark: {
-    color: '#A3A3A3', // neutral-400
-  },
-  positionText: {
+  engineName: {
     fontSize: 14,
-    lineHeight: 21,
+    fontWeight: '600',
   },
-  positionTextLight: {
+  engineNameLight: {
     color: '#404040', // neutral-700
   },
-  positionTextDark: {
+  engineNameDark: {
     color: '#D4D4D4', // neutral-300
+  },
+  position: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  positionLight: {
+    color: '#525252', // neutral-600
+  },
+  positionDark: {
+    color: '#E5E5E5', // neutral-200
   },
   citation: {
     fontSize: 12,
-    marginTop: 8,
-    textDecorationLine: 'underline',
-    textDecorationStyle: 'solid',
   },
   citationLight: {
     color: '#A3A3A3', // neutral-400
   },
   citationDark: {
-    color: '#D4D4D4', // neutral-300
-  },
-  hintContainer: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F5F5F5', // neutral-100
-  },
-  hintContainerDark: {
-    borderTopColor: '#262626', // neutral-800
-  },
-  hint: {
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
-  hintLight: {
     color: '#737373', // neutral-500
   },
-  hintDark: {
-    color: '#A3A3A3', // neutral-400
+  resolutionHint: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  resolutionHintLight: {
+    backgroundColor: '#FAFAFA', // neutral-50
+  },
+  resolutionHintDark: {
+    backgroundColor: '#262626', // neutral-800
+  },
+  resolutionText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  resolutionTextLight: {
+    color: '#525252', // neutral-600
+  },
+  resolutionTextDark: {
+    color: '#D4D4D4', // neutral-300
   },
 });
