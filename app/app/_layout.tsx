@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "react-native";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,20 +13,23 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: "#000000",
+            backgroundColor: isDark ? "#171717" : "#FFFFFF",
           },
-          headerTintColor: "#ffffff",
+          headerTintColor: isDark ? "#FFFFFF" : "#171717",
           headerTitleStyle: {
             fontWeight: "bold",
           },
           contentStyle: {
-            backgroundColor: "#000000",
+            backgroundColor: isDark ? "#171717" : "#FAFAFA",
           },
         }}
       >
