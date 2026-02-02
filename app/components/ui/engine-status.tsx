@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text } from 'react-native';
 
 interface Engine {
   name: string;
@@ -11,151 +11,43 @@ interface EngineStatusProps {
 }
 
 export function EngineStatus({ engines }: EngineStatusProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const getStatusClasses = (status: Engine['status']) => {
+    switch (status) {
+      case 'contributed':
+        return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white';
+      case 'failed':
+        return 'bg-neutral-50 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-600 opacity-60';
+      case 'pending':
+        return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 animate-pulse';
+    }
+  };
+
+  const getDotClasses = (status: Engine['status']) => {
+    switch (status) {
+      case 'contributed':
+        return 'bg-neutral-900 dark:bg-white';
+      case 'failed':
+        return 'bg-neutral-300 dark:bg-neutral-700';
+      case 'pending':
+        return 'bg-neutral-400 dark:bg-neutral-500';
+    }
+  };
 
   return (
-    <View style={styles.container}>
+    <View className="flex flex-wrap flex-row items-center gap-3">
       {engines.map((engine) => (
-        <EngineStatusItem
+        <View
           key={engine.name}
-          engine={engine}
-          isDark={isDark}
-        />
+          className="group relative"
+        >
+          <View
+            className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${getStatusClasses(engine.status)}`}
+          >
+            <View className={`w-1.5 h-1.5 rounded-full ${getDotClasses(engine.status)}`} />
+            <Text className={getStatusClasses(engine.status)}>{engine.name}</Text>
+          </View>
+        </View>
       ))}
     </View>
   );
 }
-
-interface EngineStatusItemProps {
-  engine: Engine;
-  isDark: boolean;
-}
-
-function EngineStatusItem({ engine, isDark }: EngineStatusItemProps) {
-  const getContainerStyle = () => {
-    switch (engine.status) {
-      case 'contributed':
-        return isDark ? styles.contributedDark : styles.contributedLight;
-      case 'failed':
-        return [
-          isDark ? styles.failedDark : styles.failedLight,
-          { opacity: 0.6 },
-        ];
-      case 'pending':
-        return isDark ? styles.pendingDark : styles.pendingLight;
-    }
-  };
-
-  const getTextStyle = () => {
-    switch (engine.status) {
-      case 'contributed':
-        return isDark ? styles.contributedTextDark : styles.contributedTextLight;
-      case 'failed':
-        return isDark ? styles.failedTextDark : styles.failedTextLight;
-      case 'pending':
-        return isDark ? styles.pendingTextDark : styles.pendingTextLight;
-    }
-  };
-
-  const getDotStyle = () => {
-    switch (engine.status) {
-      case 'contributed':
-        return isDark ? styles.dotContributedDark : styles.dotContributedLight;
-      case 'failed':
-        return isDark ? styles.dotFailedDark : styles.dotFailedLight;
-      case 'pending':
-        return isDark ? styles.dotPendingDark : styles.dotPendingLight;
-    }
-  };
-
-  return (
-    <View style={[styles.itemContainer, getContainerStyle()]}>
-      <View style={[styles.dot, getDotStyle()]} />
-      <Text style={[styles.itemText, getTextStyle()]}>{engine.name}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 12,
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 9999,
-  },
-  itemText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  // Contributed styles
-  contributedLight: {
-    backgroundColor: '#F5F5F5', // neutral-100
-  },
-  contributedDark: {
-    backgroundColor: '#262626', // neutral-800
-  },
-  contributedTextLight: {
-    color: '#171717', // neutral-900
-  },
-  contributedTextDark: {
-    color: '#FFFFFF',
-  },
-  dotContributedLight: {
-    backgroundColor: '#171717', // neutral-900
-  },
-  dotContributedDark: {
-    backgroundColor: '#FFFFFF',
-  },
-  // Failed styles
-  failedLight: {
-    backgroundColor: '#FAFAFA', // neutral-50
-  },
-  failedDark: {
-    backgroundColor: '#171717', // neutral-900
-  },
-  failedTextLight: {
-    color: '#A3A3A3', // neutral-400
-  },
-  failedTextDark: {
-    color: '#525252', // neutral-600
-  },
-  dotFailedLight: {
-    backgroundColor: '#D4D4D4', // neutral-300
-  },
-  dotFailedDark: {
-    backgroundColor: '#404040', // neutral-700
-  },
-  // Pending styles
-  pendingLight: {
-    backgroundColor: '#F5F5F5', // neutral-100
-  },
-  pendingDark: {
-    backgroundColor: '#262626', // neutral-800
-  },
-  pendingTextLight: {
-    color: '#737373', // neutral-500
-  },
-  pendingTextDark: {
-    color: '#A3A3A3', // neutral-400
-  },
-  dotPendingLight: {
-    backgroundColor: '#A3A3A3', // neutral-400
-  },
-  dotPendingDark: {
-    backgroundColor: '#737373', // neutral-500
-  },
-});

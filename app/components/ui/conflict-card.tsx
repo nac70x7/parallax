@@ -1,292 +1,77 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useColorScheme,
-  Animated,
-} from 'react-native';
+import React from 'react';
+import { View, Text, Pressable, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ConfidenceBadge } from './confidence-badge';
 
-interface Citation {
-  title: string;
-  url: string;
-  domain: string;
-}
-
-interface Position {
+interface EnginePosition {
   engine: string;
   position: string;
-  citation: Citation;
+  citation?: {
+    title: string;
+    url: string;
+  };
 }
 
 interface ConflictCardProps {
   topic: string;
-  positions: Position[];
+  positions: EnginePosition[];
   resolutionHint?: string;
 }
 
-export function ConflictCard({
-  topic,
-  positions,
-  resolutionHint,
-}: ConflictCardProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // Pulsing border animation
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, []);
-
-  const borderColor = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: isDark
-      ? ['#737373', '#A3A3A3'] // neutral-500 to neutral-400
-      : ['#D4D4D4', '#A3A3A3'], // neutral-300 to neutral-400
-  });
-
+export function ConflictCard({ topic, positions, resolutionHint }: ConflictCardProps) {
   return (
-    <Animated.View
-      style={[
-        styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        { borderColor },
-      ]}
+    <View
+      className="relative p-6 rounded-xl
+        bg-white dark:bg-neutral-900/80
+        border border-neutral-300 dark:border-neutral-700
+        shadow-sm dark:shadow-none
+        backdrop-blur-sm
+        animate-[pulse_3s_ease-in-out_infinite]"
     >
-      {/* Conflict badge */}
-      <View style={styles.header}>
-        <View
-          style={[
-            styles.badge,
-            isDark ? styles.badgeDark : styles.badgeLight,
-          ]}
-        >
-          <Text
-            style={[
-              styles.badgeText,
-              isDark ? styles.badgeTextDark : styles.badgeTextLight,
-            ]}
-          >
-            ⚠️ CONFLICTING INFORMATION
+      {/* Header */}
+      <View className="flex-row items-start justify-between gap-4 mb-5">
+        <View className="flex-row items-center gap-3">
+          <Ionicons name="alert-circle-outline" size={20} color="#A3A3A3" className="flex-shrink-0" />
+          <Text className="text-lg font-medium text-neutral-900 dark:text-white leading-snug">
+            {topic}
           </Text>
         </View>
+        <ConfidenceBadge level="CONFLICTED" className="flex-shrink-0" />
       </View>
 
-      {/* Topic */}
-      <Text
-        style={[
-          styles.topic,
-          isDark ? styles.topicDark : styles.topicLight,
-        ]}
-      >
-        {topic}
-      </Text>
-
-      {/* Positions */}
-      <View style={styles.positions}>
+      {/* Positions grid */}
+      <View className="gap-4">
         {positions.map((pos, index) => (
-          <View key={`${pos.engine}-${index}`} style={styles.positionItem}>
-            <View style={styles.positionHeader}>
-              <View
-                style={[
-                  styles.engineDot,
-                  isDark ? styles.engineDotDark : styles.engineDotLight,
-                ]}
-              />
-              <Text
-                style={[
-                  styles.engineName,
-                  isDark ? styles.engineNameDark : styles.engineNameLight,
-                ]}
-              >
-                {pos.engine}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.position,
-                isDark ? styles.positionDark : styles.positionLight,
-              ]}
-            >
+          <View
+            key={index}
+            className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800"
+          >
+            <Text className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+              {pos.engine}
+            </Text>
+            <Text className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
               {pos.position}
             </Text>
-            <Text
-              style={[
-                styles.citation,
-                isDark ? styles.citationDark : styles.citationLight,
-              ]}
-            >
-              Source: {pos.citation.domain}
-            </Text>
+            {pos.citation && (
+              <Pressable
+                onPress={() => Linking.openURL(pos.citation!.url)}
+                className="inline-block mt-2"
+              >
+                <Text className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 underline underline-offset-2 transition-colors">
+                  {pos.citation.title}
+                </Text>
+              </Pressable>
+            )}
           </View>
         ))}
       </View>
 
       {/* Resolution hint */}
       {resolutionHint && (
-        <View
-          style={[
-            styles.resolutionHint,
-            isDark ? styles.resolutionHintDark : styles.resolutionHintLight,
-          ]}
-        >
-          <Text
-            style={[
-              styles.resolutionText,
-              isDark ? styles.resolutionTextDark : styles.resolutionTextLight,
-            ]}
-          >
-            💡 {resolutionHint}
-          </Text>
-        </View>
+        <Text className="mt-5 pt-4 text-sm text-neutral-500 dark:text-neutral-400 border-t border-neutral-100 dark:border-neutral-800 italic">
+          {resolutionHint}
+        </Text>
       )}
-    </Animated.View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    padding: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-  },
-  cardDark: {
-    backgroundColor: 'rgba(23, 23, 23, 0.8)', // neutral-900/80
-  },
-  header: {
-    marginBottom: 16,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  badgeLight: {
-    backgroundColor: '#FAFAFA', // neutral-50
-    borderWidth: 1,
-    borderColor: '#E5E5E5', // neutral-200
-  },
-  badgeDark: {
-    backgroundColor: '#262626', // neutral-800
-    borderWidth: 1,
-    borderColor: '#404040', // neutral-700
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  badgeTextLight: {
-    color: '#737373', // neutral-500
-  },
-  badgeTextDark: {
-    color: '#A3A3A3', // neutral-400
-  },
-  topic: {
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 26,
-    marginBottom: 20,
-  },
-  topicLight: {
-    color: '#171717', // neutral-900
-  },
-  topicDark: {
-    color: '#FFFFFF',
-  },
-  positions: {
-    gap: 16,
-  },
-  positionItem: {
-    gap: 8,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(229, 229, 229, 0.5)', // neutral-200/50
-  },
-  positionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  engineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  engineDotLight: {
-    backgroundColor: '#A3A3A3', // neutral-400
-  },
-  engineDotDark: {
-    backgroundColor: '#737373', // neutral-500
-  },
-  engineName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  engineNameLight: {
-    color: '#404040', // neutral-700
-  },
-  engineNameDark: {
-    color: '#D4D4D4', // neutral-300
-  },
-  position: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  positionLight: {
-    color: '#525252', // neutral-600
-  },
-  positionDark: {
-    color: '#E5E5E5', // neutral-200
-  },
-  citation: {
-    fontSize: 12,
-  },
-  citationLight: {
-    color: '#A3A3A3', // neutral-400
-  },
-  citationDark: {
-    color: '#737373', // neutral-500
-  },
-  resolutionHint: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
-  },
-  resolutionHintLight: {
-    backgroundColor: '#FAFAFA', // neutral-50
-  },
-  resolutionHintDark: {
-    backgroundColor: '#262626', // neutral-800
-  },
-  resolutionText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  resolutionTextLight: {
-    color: '#525252', // neutral-600
-  },
-  resolutionTextDark: {
-    color: '#D4D4D4', // neutral-300
-  },
-});
