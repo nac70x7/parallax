@@ -57,3 +57,5 @@ Desktop.ini
 
 # Keep templates
 !.env.example
+.cursor/
+temp-v0-components/
